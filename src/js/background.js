@@ -1,7 +1,5 @@
 // Cookies needed to check if user is signed into Letterboxd
 const cookieNames = [
-    'supermodel.user.device.2dc0e23ef029dbb0fad28c48224357e5',
-    'supermodel.user.device.1bdf9c5fe438a41b3ac6ab3f40d9d700',
     'letterboxd.signed.in.as',
     'com.xk72.webparts.user.CURRENT'
 ];
