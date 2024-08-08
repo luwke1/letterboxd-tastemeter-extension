@@ -152,7 +152,7 @@ async function displayTasteMeter() {
 
                 if (tasteScore <= 50){
                     meterSpan.style.color = "red";
-                } else if (tasteScore <= 69){
+                } else if (tasteScore <= 79){
                     meterSpan.style.color = "#f7a427";
                 }else{
                     meterSpan.style.color = "#00ff40";
