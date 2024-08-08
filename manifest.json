@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Letterboxd Taste Meter",
+  "version": "1.0",
+  "permissions": [
+    "tabs",
+    "cookies",
+    "storage",
+    "scripting",
+    "*://letterboxd.com/*"
+  ],
+  "background": {
+    "service_worker": "src/js/background.js"
+  },
+  "host_permissions": [
+    "*://letterboxd.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://letterboxd.com/*"
+      ],
+      "run_at": "document_idle",
+      "js": [
+        "src/js/contentScript.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "TasteMeter",
+    "default_popup": "src/html/popup.html"
+  },
+  "icons": {
+    "128": "src/icons/extension_icon128.png"
+  },
+  "browser_action": {
+    "default_icon": {
+      "128": "src/icons/extension_icon128.png"
+    }
+  }
+}
