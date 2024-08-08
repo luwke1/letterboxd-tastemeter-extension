@@ -114,7 +114,7 @@ function calculateTasteScore(reviewData, adminUserReviews) {
     // Check for enough shared ratings
     if (sharedRatings >= 15) {
         const mad = totalDifference / sharedRatings; // Calculate the Mean Absolute Difference
-        const maxDifference = 4.5;
+        const maxDifference = 9;
         const similarityScore = Math.floor((1 - (mad / maxDifference)) * 100); // Normalize to scale of 0-100%
         return { tasteScore: similarityScore, sharedRatings: sharedRatings };
     } else {
