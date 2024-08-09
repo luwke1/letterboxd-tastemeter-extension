@@ -17,4 +17,3 @@
 **Notes**
 * This extension requires you to be signed into a Letterboxd account in order to generate similarity scores
 * Every time you open Chrome it may warn you about running extensions in developer mode, just click &#10005; to keep the extension enabled.
-* The Firefox version supports automatic updates.
