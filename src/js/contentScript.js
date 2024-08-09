@@ -14,9 +14,9 @@ async function getTasteScore(userLink) {
     }
 }
 
-// Fetches user reviews sorted by extension users highest ratings
+// Fetches user reviews sorted by extension users lowest ratings
 async function fetchUserReviews(userLink) {
-    const response = await fetch(`https://letterboxd.com${userLink}films/by/your-rating/`, { credentials: "include" });
+    const response = await fetch(`https://letterboxd.com${userLink}films/by/your-rating-lowest/`, { credentials: "include" });
     if (!response.ok) {
         throw new Error(`Failed to fetch reviews for ${userLink}: ${response.statusText}`);
     }
@@ -26,7 +26,7 @@ async function fetchUserReviews(userLink) {
     const parser = new DOMParser();
     const newDoc = parser.parseFromString(text, "text/html");
 
-    // Select all user reviews sorted by highest rating
+    // Select all user reviews sorted by lowest rating
     const reviews = newDoc.querySelectorAll('.poster-container');
     const reviewData = {};
 
@@ -59,7 +59,7 @@ async function fetchExtensionUserRatings(reviewData, userLink) {
         "Accept": "application/json, text/javascript, */*; q=0.01",
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "Origin": "https://letterboxd.com",
-        "Referer": `https://letterboxd.com${userLink}films/by/your-rating/`,
+        "Referer": `https://letterboxd.com${userLink}films/by/your-rating-lowest/`,
         "X-Requested-With": "XMLHttpRequest"
     };
 
