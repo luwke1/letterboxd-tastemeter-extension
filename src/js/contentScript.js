@@ -90,35 +90,70 @@ async function fetchExtensionUserRatings(reviewData, userLink) {
     return jsonData.filmRatings;
 }
 
-// Calculate the Mean Absolute Difference and return the taste score
+// Calculate the Pearson Correlation Coefficient and return the taste score
 function calculateTasteScore(reviewData, adminUserReviews) {
-    let sharedRatings = 0;
-    let totalDifference = 0;
+    let sharedFilms = [];
 
-    // Calculate MAD for shared ratings
-    for (const [key, adminUserRating] of Object.entries(adminUserReviews)) {
-        if (sharedRatings >= 50) {
-            break;
-        }
-        // Extract film ID from key
-        const adminUserReviewID = key.slice(5); 
+    // Map adminUserReviews keys to film IDs without 'film:'
+    let adminRatings = {};
+    for (const key in adminUserReviews) {
+        let filmID = key.slice(5);
+        let rating = adminUserReviews[key];
+        // Convert rating to star rating (assuming ratings are from 10 to 100)
+        let starRating = rating / 20; // Convert to 0.5 to 5.0 scale
+        adminRatings[filmID] = starRating;
+    }
 
-        // Check if extension user has rated the same film
-        if (adminUserReviewID in reviewData) {
-            const userRating = reviewData[adminUserReviewID];
-            totalDifference += Math.abs(adminUserRating - userRating);
-            sharedRatings++;
+    // Convert user's ratings as well
+    let userRatings = {};
+    for (const filmID in reviewData) {
+        let rating = reviewData[filmID];
+        let starRating = rating / 20; // Convert to 0.5 to 5.0 scale
+        userRatings[filmID] = starRating;
+    }
+
+    // Find shared films
+    for (const filmID in userRatings) {
+        if (adminRatings.hasOwnProperty(filmID)) {
+            sharedFilms.push(filmID);
         }
     }
 
-    // Check for enough shared ratings
-    if (sharedRatings >= 15) {
-        const mad = totalDifference / sharedRatings; // Calculate the Mean Absolute Difference
-        const maxDifference = 9;
-        const similarityScore = Math.floor((1 - (mad / maxDifference)) * 100); // Normalize to scale of 0-100%
-        return { tasteScore: similarityScore, sharedRatings: sharedRatings };
+    let n = sharedFilms.length;
+
+    if (n >= 15) {
+        let sumX = 0;
+        let sumY = 0;
+        let sumX2 = 0;
+        let sumY2 = 0;
+        let sumXY = 0;
+
+        for (const filmID of sharedFilms) {
+            let x = userRatings[filmID];
+            let y = adminRatings[filmID];
+            sumX += x;
+            sumY += y;
+            sumX2 += x * x;
+            sumY2 += y * y;
+            sumXY += x * y;
+        }
+
+        let numerator = (n * sumXY) - (sumX * sumY);
+        let denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+        if (denominator === 0) {
+            return { tasteScore: 50, sharedRatings: n }; // Neutral similarity
+        }
+
+        let pearsonCorrelation = numerator / denominator;
+
+        // Map pearsonCorrelation from [-1,1] to [0,100%]
+        let similarityScore = Math.pow((pearsonCorrelation + 1) / 2, 0.5) * 100;
+
+        // Return the similarity score and number of shared ratings
+        return { tasteScore: Math.floor(similarityScore), sharedRatings: n };
     } else {
-        return { tasteScore: "NOT ENOUGH INFO", sharedRatings: sharedRatings };
+        return { tasteScore: "NOT ENOUGH INFO", sharedRatings: n };
     }
 }
 

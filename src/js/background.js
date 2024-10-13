@@ -1,7 +1,6 @@
 // Cookies needed to check if user is signed into Letterboxd
 const cookieNames = [
-    'letterboxd.signed.in.as',
-    'com.xk72.webparts.user.CURRENT'
+    'letterboxd.signed.in.as'
 ];
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -102,7 +101,7 @@ function checkCookies() {
             chrome.cookies.get({ url: 'https://letterboxd.com', name: name }, function (cookie) {
                 if (!cookie) {
                     isLoggedIn = false;
-                    // console.log(`Cookie ${name} not found`);
+                    console.log(`Cookie ${name} not found`);
                 }
                 pendingChecks--;
 
