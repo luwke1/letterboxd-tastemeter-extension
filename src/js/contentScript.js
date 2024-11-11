@@ -1,3 +1,4 @@
+// Returns the taste score for a specific user
 async function getTasteScore(userLink) {
     try {
         // Fetch user reviews
@@ -67,6 +68,11 @@ async function fetchExtensionUserRatings(reviewData, userLink) {
     const params = new URLSearchParams();
     const posterIds = Object.keys(reviewData);
 
+    if (!posterIds.length) {
+        console.warn("No poster IDs found in reviewData.");
+        throw new Error("No poster IDs available to fetch admin user reviews.");
+    }
+
     // Append film IDs and likeable film IDs to the params
     posterIds.forEach(id => {
         params.append('posters', id);
@@ -87,7 +93,15 @@ async function fetchExtensionUserRatings(reviewData, userLink) {
 
     // Parse the JSON response to get extension user reviews
     const jsonData = await userResponse.json();
-    return jsonData.filmRatings;
+
+    // Extract rateables and format them as expected by calculateTasteScore
+    const adminUserReviews = {};
+    jsonData.rateables.forEach(item => {
+        const filmID = item.rateableUid.split(":")[1];
+        adminUserReviews[filmID] = item.rating;
+    });
+    
+    return adminUserReviews;
 }
 
 // Calculate the Pearson Correlation Coefficient and return the taste score
@@ -96,9 +110,8 @@ function calculateTasteScore(reviewData, adminUserReviews) {
 
     // Map adminUserReviews keys to film IDs without 'film:'
     let adminRatings = {};
-    for (const key in adminUserReviews) {
-        let filmID = key.slice(5);
-        let rating = adminUserReviews[key];
+    for (const filmID in adminUserReviews) {
+        let rating = adminUserReviews[filmID];
         // Convert rating to star rating (assuming ratings are from 10 to 100)
         let starRating = rating / 20; // Convert to 0.5 to 5.0 scale
         adminRatings[filmID] = starRating;
