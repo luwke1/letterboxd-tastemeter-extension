@@ -15,10 +15,19 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
             // Check if user has taste meter enabled
             let tasteMeterEnabled = await getMeterToggle();
 
+            const urlPattern = /^https:\/\/letterboxd\.com\/[^\/]+\/(\?.*)?$/;
 
             // If they are logged in run extension normally
             if (tasteMeterEnabled && isLoggedIn && tab.url.includes("letterboxd.com/film")) {
                 chrome.tabs.sendMessage(tabId, { type: "movie" }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error(chrome.runtime.lastError.message);
+                    } else {
+                        console.log(response);
+                    }
+                });
+            }else if(tasteMeterEnabled && isLoggedIn && urlPattern.test(tab.url)){
+                chrome.tabs.sendMessage(tabId, { type: "profile" }, (response) => {
                     if (chrome.runtime.lastError) {
                         console.error(chrome.runtime.lastError.message);
                     } else {

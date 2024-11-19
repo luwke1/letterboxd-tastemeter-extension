@@ -188,45 +188,67 @@ async function displayTasteMeter() {
             var { tasteScore, sharedRatings } = await getTasteScore(userLink);
 
             // Add the taste meter score to the attribution HTML element
-            const meterSpan = document.createElement("span");
-
-            meterSpan.classList.add("taste-meter");
-            
-            
-
-            if ((typeof tasteScore) == "number") {
-                // meterSpan.style.border = "1px solid";
-                // meterSpan.style.margin = "1px 5px 1px 5px";
-
-                if (tasteScore <= 50){
-                    meterSpan.style.color = "red";
-                } else if (tasteScore <= 79){
-                    meterSpan.style.color = "#f7a427";
-                }else{
-                    meterSpan.style.color = "#00ff40";
-                }
-                meterSpan.textContent = `Taste Meter: ${tasteScore}% from ${sharedRatings} movies`;
-                // meterSpan.style.fontWeight = "bold";
-                
-            } else {
-                meterSpan.style.fontWeight = "bold";
-                meterSpan.textContent = `Only ${sharedRatings} shared movie ratings`;
-            }
+            const meterSpan = createMeterSpan(tasteScore, sharedRatings)
             attributeObject.appendChild(meterSpan);
         }
 
     }
 }
 
+// Function to generate the display element for the similary scores
+function createMeterSpan(tasteScore, sharedRatings){
+    const meterSpan = document.createElement("span");
+
+    meterSpan.classList.add("taste-meter");
+    
+    if ((typeof tasteScore) == "number") {
+        if (tasteScore <= 50){
+            meterSpan.style.color = "red";
+        } else if (tasteScore <= 79){
+            meterSpan.style.color = "#f7a427";
+        }else{
+            meterSpan.style.color = "#00ff40";
+        }
+        meterSpan.textContent = `Taste Meter: ${tasteScore}% from ${sharedRatings} movies`;
+    } else {
+        meterSpan.style.fontWeight = "bold";
+        meterSpan.textContent = `Only ${sharedRatings} shared movie ratings`;
+    }
+
+    return meterSpan
+}
+
+// Function to generate and display a similarity score for a profile page
+async function displayProfileMeter(){
+    // Find the parent element with the class 'profile-actions'
+    const profileActions = document.querySelector('.profile-actions');
+
+    // Get the username of the current user
+    const username = document.querySelector(".displayname").getAttribute("data-original-title");
+
+    // Grab the taste score and shared ratings count
+    var { tasteScore, sharedRatings } = await getTasteScore(`/${username}/`);
+
+    // Define the new div content
+    const meterSpan = createMeterSpan(tasteScore, sharedRatings);
+
+    // Append to the profile action section of the page
+    profileActions.append(meterSpan)
+}
+
 chrome.runtime.onMessage.addListener(async (obj, sender, sendResponse) => {
     const { type } = obj;
 
+    // If user on film page, display taste meter for all users
     if (type === "movie") {
 
         // Wait until reviews load and then display taste meter
         setTimeout(displayTasteMeter, 500);
 
+    }else if (type=="profile"){ // If user is on profile page, only display profile meter
+        setTimeout(displayProfileMeter, 500);
     }
+
     // Send the final response
     sendResponse({ status: "processed" });
 
