@@ -17,3 +17,5 @@
 **Notes**
 * This extension requires you to be signed into a Letterboxd account in order to generate similarity scores
 * Every time you open Chrome it may warn you about running extensions in developer mode, just click &#10005; to keep the extension enabled.
+
+![image](https://github.com/user-attachments/assets/c95ee4b7-10d2-4c0d-a227-104de9ba1a31)
