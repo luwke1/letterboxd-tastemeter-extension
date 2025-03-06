@@ -23,7 +23,7 @@ async function fetchUserReviews(userLink) {
     }
     const text = await response.text();
 
-    // Parse the HTML response into DOM object
+    // Parse the HTML response into a DOM object
     const parser = new DOMParser();
     const newDoc = parser.parseFromString(text, "text/html");
 
@@ -46,14 +46,14 @@ async function fetchUserReviews(userLink) {
         
         if (ratingMatch) {
             const userRating = parseFloat(ratingMatch[1]);
-            reviewData[filmID] = userRating; // Store the filmID and rating
+            reviewData[filmID] = userRating;
         }
     });
 
     return reviewData;
 }
 
-// Fetches extension user reviews based on the other users review data
+// Fetches extension user reviews based on the other user's review data
 async function fetchExtensionUserRatings(reviewData, userLink) {
     const url = "https://letterboxd.com/ajax/letterboxd-metadata/";
     const headers = {
@@ -64,7 +64,7 @@ async function fetchExtensionUserRatings(reviewData, userLink) {
         "X-Requested-With": "XMLHttpRequest"
     };
 
-    // Create URLSearchParams for POST request
+    // Create URLSearchParams for the POST request
     const params = new URLSearchParams();
     const posterIds = Object.keys(reviewData);
 
@@ -79,7 +79,7 @@ async function fetchExtensionUserRatings(reviewData, userLink) {
         params.append('likeables', `film:${id}`);
     });
 
-    // Fetch extension users reviews data using the POST request
+    // Fetch extension user's reviews data using the POST request
     const userResponse = await fetch(url, {
         method: "POST",
         headers: headers,
@@ -112,7 +112,6 @@ function calculateTasteScore(reviewData, adminUserReviews) {
     let adminRatings = {};
     for (const filmID in adminUserReviews) {
         let rating = adminUserReviews[filmID];
-        // Convert rating to star rating (assuming ratings are from 10 to 100)
         let starRating = rating / 20; // Convert to 0.5 to 5.0 scale
         adminRatings[filmID] = starRating;
     }
@@ -163,50 +162,45 @@ function calculateTasteScore(reviewData, adminUserReviews) {
         // Map pearsonCorrelation from [-1,1] to [0,100%]
         let similarityScore = Math.pow((pearsonCorrelation + 1) / 2, 0.5) * 100;
 
-        // Return the similarity score and number of shared ratings
         return { tasteScore: Math.floor(similarityScore), sharedRatings: n };
     } else {
         return { tasteScore: "NOT ENOUGH INFO", sharedRatings: n };
     }
 }
 
+// Updated: Process each user individually so the taste meter appears as soon as the data is ready
 async function displayTasteMeter() {
-    // Grab all the displayed reviews
-    var userObjects = document.querySelectorAll(".film-detail");
+    const userObjects = document.querySelectorAll(".film-detail");
 
-    // Process each user object sequentially
-    for (const userObj of userObjects) {
-        // Grabs the current reviewer's Letterboxd ID link
-        var userLink = userObj.querySelector(".avatar").getAttribute("href");
+    userObjects.forEach(async (userObj) => {
+        // Grab the reviewer's Letterboxd ID link
+        const userLink = userObj.querySelector("a.avatar").getAttribute("href");
+        const attributeObj = userObj.querySelector(".attribution");
 
-        // Grabs the HTML element where the taste meter will be added
-        var attributeObject = userObj.querySelector(".attribution");
+        // Skip if taste meter already exists
+        if (attributeObj.querySelector(".taste-meter")) return;
 
-        // If there is no taste meter span, generate one, otherwise ignore
-        if (!attributeObject.querySelector(".taste-meter")) {
-            // Get taste meter score
-            var { tasteScore, sharedRatings } = await getTasteScore(userLink);
-
-            // Add the taste meter score to the attribution HTML element
-            const meterSpan = createMeterSpan(tasteScore, sharedRatings)
-            attributeObject.appendChild(meterSpan);
+        try {
+            const { tasteScore, sharedRatings } = await getTasteScore(userLink);
+            const meterSpan = createMeterSpan(tasteScore, sharedRatings);
+            attributeObj.appendChild(meterSpan);
+        } catch (error) {
+            console.error(`Error fetching taste meter for ${userLink}:`, error);
         }
-
-    }
+    });
 }
 
-// Function to generate the display element for the similary scores
-function createMeterSpan(tasteScore, sharedRatings){
+// Generates the display element for the similarity scores
+function createMeterSpan(tasteScore, sharedRatings) {
     const meterSpan = document.createElement("span");
-
     meterSpan.classList.add("taste-meter");
     
-    if ((typeof tasteScore) == "number") {
+    if (typeof tasteScore === "number") {
         if (tasteScore <= 50){
             meterSpan.style.color = "red";
         } else if (tasteScore <= 79){
             meterSpan.style.color = "#f7a427";
-        }else{
+        } else {
             meterSpan.style.color = "#00ff40";
         }
         meterSpan.textContent = `Taste Meter: ${tasteScore}% from ${sharedRatings} movies`;
@@ -215,47 +209,28 @@ function createMeterSpan(tasteScore, sharedRatings){
         meterSpan.textContent = `Only ${sharedRatings} shared movie ratings`;
     }
 
-    return meterSpan
+    return meterSpan;
 }
 
-// Function to generate and display a similarity score for a profile page
+// Generate and display a similarity score for a profile page
 async function displayProfileMeter(){
-    // Find the parent element with the class 'profile-actions'
     const profileActions = document.querySelector('.profile-actions');
-
-    // Get the username of the current user
     const username = document.querySelector(".displayname").getAttribute("data-original-title");
-
-    // Grab the taste score and shared ratings count
     var { tasteScore, sharedRatings } = await getTasteScore(`/${username}/`);
-
-    // Define the new div content
     const meterSpan = createMeterSpan(tasteScore, sharedRatings);
-
-    // Append to the profile action section of the page
-    profileActions.append(meterSpan)
+    profileActions.append(meterSpan);
 }
 
 chrome.runtime.onMessage.addListener(async (obj, sender, sendResponse) => {
     const { type } = obj;
 
-    // If user on film page, display taste meter for all users
     if (type === "movie") {
-
-        // Wait until reviews load and then display taste meter
+        // Wait briefly to allow reviews to load then display taste meters individually
         setTimeout(displayTasteMeter, 500);
-
-    }else if (type=="profile"){ // If user is on profile page, only display profile meter
+    } else if (type === "profile") {
         setTimeout(displayProfileMeter, 500);
     }
 
-    // Send the final response
     sendResponse({ status: "processed" });
-
-    // Returning true to indicate that the response is asynchronous
     return true;
 });
-
-
-
-
